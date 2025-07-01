@@ -1,5 +1,5 @@
 import React, {useState, useEffect, useMemo} from 'react';
-import { Box, Typography, Card, TextField, InputAdornment, MenuItem, Select, FormControl, Chip, IconButton, Divider, Autocomplete, CircularProgress } from '@mui/material';
+import { Box, Typography, Card, TextField, InputAdornment, MenuItem, Select, FormControl, Chip, IconButton, Divider, Autocomplete, CircularProgress, useTheme, useMediaQuery } from '@mui/material';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
 import axiosInstance from '../api/axios';
@@ -22,6 +22,9 @@ const Browse = () => {
   const [filteredDocuments, setFilteredDocuments] = useState([]);
   const [debounce, setDebounce] = useState('');
   const [loading, setLoading] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
   const fetchDocuments = async () => {
     try {
@@ -124,17 +127,39 @@ const Browse = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', background: '#f7f9fb', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 4, marginBottom: 2 }}>
+    <Box sx={{ 
+      minHeight: '100vh', 
+      background: '#f7f9fb', 
+      display: 'flex', 
+      flexDirection: 'column', 
+      alignItems: 'center', 
+      paddingTop: { xs: 2, sm: 3, md: 4 }, 
+      paddingBottom: { xs: 2, sm: 3, md: 4 },
+      paddingX: { xs: 1, sm: 2, md: 0 },
+      marginBottom: 2 
+    }}>
       {loading && (
           <Box sx={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', bgcolor: 'rgba(12, 12, 12, 0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <CircularProgress />
           </Box>
       )}
-      <Card sx={{ width: '80%', p: 4, mb: 4, borderRadius: 3, boxShadow: 1 }}>
-        <Typography variant="h5" sx={{ fontWeight: 700, mb: 3 }}>Filter FDA 483 Inspections</Typography>
-        <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-          <Box sx={{ flex: 2, minWidth: 220 }}>
-            <Typography sx={{ fontWeight: 500, mb: 1 }}>Search</Typography>
+      <Card sx={{ 
+        width: { xs: '100%', sm: '95%', md: '80%' }, 
+        p: { xs: 2, sm: 3, md: 4 }, 
+        mb: { xs: 2, sm: 3, md: 4 }, 
+        borderRadius: 3, 
+        boxShadow: 1 
+      }}>
+        <Typography variant={isMobile ? "h6" : "h5"} sx={{ fontWeight: 700, mb: 3, fontSize: { xs: '18px', sm: '20px', md: '24px' } }}>Filter FDA 483 Inspections</Typography>
+        <Box sx={{ 
+          display: 'flex', 
+          gap: { xs: 2, sm: 3, md: 4 }, 
+          flexWrap: 'wrap', 
+          alignItems: 'flex-end',
+          flexDirection: { xs: 'column', lg: 'row' }
+        }}>
+          <Box sx={{ flex: { xs: 'none', lg: 2 }, minWidth: { xs: '100%', lg: 220 }, width: '100%' }}>
+            <Typography sx={{ fontWeight: 500, mb: 1, fontSize: { xs: '14px', sm: '16px' } }}>Search</Typography>
             <TextField
               fullWidth
               placeholder="Search by company, FEI, Record ID..."
@@ -143,7 +168,7 @@ const Browse = () => {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchOutlinedIcon sx={{ color: '#b3a9a9' }} />
+                    <SearchOutlinedIcon sx={{ color: '#b3a9a9', fontSize: { xs: '18px', sm: '20px' } }} />
                   </InputAdornment>
                 ),
               }}
@@ -151,8 +176,8 @@ const Browse = () => {
               sx={{ background: '#FFF', borderRadius: 2 }}
             />
           </Box>
-          <Box sx={{ flex: 1, minWidth: 180 }}>
-            <Typography sx={{ fontWeight: 500, mb: 1 }}>Company</Typography>
+          <Box sx={{ flex: { xs: 'none', lg: 1 }, minWidth: { xs: '100%', lg: 180 }, width: '100%' }}>
+            <Typography sx={{ fontWeight: 500, mb: 1, fontSize: { xs: '14px', sm: '16px' } }}>Company</Typography>
             <Autocomplete
               options={companysList}
               value={company}
@@ -164,8 +189,8 @@ const Browse = () => {
               isOptionEqualToValue={(option, value) => option === value}
             />
           </Box>
-          <Box sx={{ flex: 1, minWidth: 180 }}>
-            <Typography sx={{ fontWeight: 500, mb: 1 }}>FEI Number</Typography>
+          <Box sx={{ flex: { xs: 'none', lg: 1 }, minWidth: { xs: '100%', lg: 180 }, width: '100%' }}>
+            <Typography sx={{ fontWeight: 500, mb: 1, fontSize: { xs: '14px', sm: '16px' } }}>FEI Number</Typography>
             <Autocomplete 
               options={feiNumbersList}
               value={fei}
@@ -178,8 +203,8 @@ const Browse = () => {
               isOptionEqualToValue={(option, value) => option === value}
             />
           </Box>
-          <Box sx={{ flex: 1, minWidth: 180 }}>
-            <Typography sx={{ fontWeight: 500, mb: 1 }}>Sort By</Typography>
+          <Box sx={{ flex: { xs: 'none', lg: 1 }, minWidth: { xs: '100%', lg: 180 }, width: '100%' }}>
+            <Typography sx={{ fontWeight: 500, mb: 1, fontSize: { xs: '14px', sm: '16px' } }}>Sort By</Typography>
             <FormControl fullWidth size="small">
               <Select
                 value={sort}
@@ -196,104 +221,220 @@ const Browse = () => {
       </Card>
       {filteredDocuments.length > 0 ? (
         <>
-          <Box sx={{ width: '84%', mb: 2, display: 'flex', alignItems: 'center', fontWeight: 500 }}>
-            <Typography sx={{ color: '#38404a', fontWeight: 600, fontSize: 16 }}>
+          <Box sx={{ 
+            width: { xs: '100%', sm: '95%', md: '84%' }, 
+            mb: { xs: 1, sm: 2 }, 
+            display: 'flex', 
+            alignItems: 'center', 
+            fontWeight: 500,
+            flexDirection: { xs: 'column', sm: 'row' },
+            gap: { xs: 0.5, sm: 0 }
+          }}>
+            <Typography sx={{ 
+              color: '#38404a', 
+              fontWeight: 600, 
+              fontSize: { xs: '14px', sm: '16px' } 
+            }}>
               {filteredDocuments.length} FDA 483 inspections found
             </Typography>
-            <Typography sx={{ color: '#38404a', fontWeight: 500, fontSize: 16, mx: 2 }}>
+            <Typography sx={{ 
+              color: '#38404a', 
+              fontWeight: 500, 
+              fontSize: { xs: '14px', sm: '16px' }, 
+              mx: { xs: 0, sm: 2 },
+              display: { xs: 'none', sm: 'block' }
+            }}>
               &bull;
             </Typography>
-            <Typography sx={{ color: '#38404a', fontWeight: 500, fontSize: 16 }}>
+            <Typography sx={{ 
+              color: '#38404a', 
+              fontWeight: 500, 
+              fontSize: { xs: '14px', sm: '16px' } 
+            }}>
               {filteredDocuments.length} total observations
             </Typography>
           </Box>
-          <Card sx={{ width: '80%', p: 4, borderRadius: 3, boxShadow: 1 }}>
-            <Typography variant="h5" sx={{ fontWeight: 700, mb: 3 }}>FDA 483 Inspections</Typography>
+          <Card sx={{ 
+            width: { xs: '100%', sm: '95%', md: '80%' }, 
+            p: { xs: 2, sm: 3, md: 4 }, 
+            borderRadius: 3, 
+            boxShadow: 1 
+          }}>
+            <Typography variant={isMobile ? "h6" : "h5"} sx={{ fontWeight: 700, mb: 3, fontSize: { xs: '18px', sm: '20px', md: '24px' } }}>FDA 483 Inspections</Typography>
             {/* Table Header */}
-            <Box sx={{ display: 'flex', px: 1, pb: 1, color: '#7a7a7a', fontWeight: 600, fontSize: 16 }}>
+            <Box sx={{ 
+              display: { xs: 'none', md: 'flex' }, 
+              px: 1, 
+              pb: 1, 
+              color: '#7a7a7a', 
+              fontWeight: 600, 
+              fontSize: 16 
+            }}>
               <Box sx={{ flex: 1.2 }}>Inspection Date</Box>
               <Box sx={{ flex: 1.5 }}>Company</Box>
               <Box sx={{ flex: 1 }}>FEI Number</Box>
               <Box sx={{ flex: 3 }}>Key Findings</Box>
               <Box sx={{ width: 60, textAlign: 'center' }}>View</Box>
             </Box>
-            <Divider sx={{ mb: 2 }} />
+            <Divider sx={{ mb: 2, display: { xs: 'none', md: 'block' } }} />
             {/* Table Rows */}
             {filteredDocuments.map((insp, idx) => {
               const inspectionDate = new Date(insp.date).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
               return (
-              <Box key={idx} sx={{ display: 'flex', alignItems: 'center', px: 1, py: 1, borderBottom: idx !== filteredDocuments.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
-                {/* Inspection Date */}
-                <Box sx={{ flex: 1.2 }}>
-                  <Typography sx={{ fontWeight: 500, fontSize: 14 }}>{inspectionDate}</Typography>
-                  {/* <Typography sx={{ color: '#7a7a7a', fontSize: 14 }}>{insp.companyDetail.split('\n')[0]}</Typography> */}
-                </Box>
-                {/* Company */}
-                <Box sx={{ flex: 1.5 }}>
-                  <Typography sx={{ fontWeight: 500, fontSize: 14 }}>{insp.name}</Typography>
-                  {/* <Typography sx={{ color: '#7a7a7a', fontSize: 14 }}>{insp.companyDetail.split('\n')[1]}</Typography> */}
-                </Box>
-                {/* FEI Number */}
-                <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', height: '100%' }}>
-                  <Box sx={{ background: '#f5f7fa', color: '#222', borderRadius: 1, px: 2, py: 0.5, fontWeight: 500, fontSize: 14, display: 'inline-block' }}>
-                    {insp.fei_number ? insp.fei_number : 'N/A'}
+              <Box key={idx} sx={{ 
+                display: { xs: 'block', md: 'flex' }, 
+                alignItems: 'center', 
+                px: { xs: 0, md: 1 }, 
+                py: { xs: 2, md: 1 }, 
+                borderBottom: idx !== filteredDocuments.length - 1 ? '1px solid #f0f0f0' : 'none',
+                mb: { xs: 2, md: 0 }
+              }}>
+                {/* Mobile Layout */}
+                {isMobile && (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: '100%' }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography sx={{ fontWeight: 500, fontSize: { xs: '13px', sm: '14px' } }}>{inspectionDate}</Typography>
+                      <Box sx={{ background: '#f5f7fa', color: '#222', borderRadius: 1, px: 2, py: 0.5, fontWeight: 500, fontSize: { xs: '12px', sm: '14px' } }}>
+                        {insp.fei_number ? insp.fei_number : 'N/A'}
+                      </Box>
+                    </Box>
+                    <Typography sx={{ fontWeight: 500, fontSize: { xs: '14px', sm: '16px' } }}>{insp.name}</Typography>
+                    {insp.summary && (
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        <Chip
+                          label={insp.category}
+                          sx={{
+                            background: '#e3eafd',
+                            color: '#1976d2',
+                            fontWeight: 500,
+                            fontSize: { xs: '12px', sm: '14px' },
+                            borderRadius: 4,
+                            width: 'fit-content',
+                          }}
+                          size="small"
+                        />
+                        <Typography sx={{
+                          color: '#38404a',
+                          fontSize: { xs: '13px', sm: '15px' },
+                          fontWeight: 500,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 3,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}>
+                          {insp.summary}
+                        </Typography>
+                      </Box>
+                    )}
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                      <IconButton 
+                        onClick={() => downloadPdf(insp.url, insp.name)}
+                        sx={{ 
+                          border: '1px solid #d8dce1', 
+                          borderRadius: 3,
+                          padding: 1
+                        }}
+                      >
+                        <RemoveRedEyeOutlinedIcon sx={{ fontSize: { xs: '18px', sm: '20px' } }} />
+                      </IconButton>
+                    </Box>
                   </Box>
-                </Box>
-                {/* Key Findings */}
-                <Box sx={{ flex: 3, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  {insp.summary ? <Box>
-                    <Chip
-                      label={insp.category}
-                      sx={{
-                        background: '#e3eafd',
-                        color: '#1976d2',
-                        fontWeight: 500,
-                        fontSize: 14,
-                        borderRadius: 4,
-                        width: 'fit-content',
-                      }}
-                      size="small"
-                    />
-                    <Typography sx={{
-                      color: '#38404a',
-                      fontSize: 15,
-                      fontWeight: 500,
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      maxWidth: '90%',
-                    }}>
-                      {insp.summary}
-                    </Typography>
-                  </Box>
-                  :  
-                  <Box>
-                    <Typography sx={{ color: '#38404a', fontSize: 15, fontWeight: 500 }}>
-                      -
-                    </Typography>
-                  </Box>
-                }
-                </Box>
-                {/* View/Download */}
-                <Box sx={{ width: 45, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', border: '1px solid #d8dce1', borderRadius: 3 }}>
-                  <IconButton onClick={() => downloadPdf(insp.url, insp.name)}>
-                    <RemoveRedEyeOutlinedIcon />
-                  </IconButton>
-                </Box>
+                )}
+                
+                {/* Desktop Layout */}
+                {!isMobile && (
+                  <>
+                    {/* Inspection Date */}
+                    <Box sx={{ flex: 1.2 }}>
+                      <Typography sx={{ fontWeight: 500, fontSize: 14 }}>{inspectionDate}</Typography>
+                    </Box>
+                    {/* Company */}
+                    <Box sx={{ flex: 1.5 }}>
+                      <Typography sx={{ fontWeight: 500, fontSize: 14 }}>{insp.name}</Typography>
+                    </Box>
+                    {/* FEI Number */}
+                    <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', height: '100%' }}>
+                      <Box sx={{ background: '#f5f7fa', color: '#222', borderRadius: 1, px: 2, py: 0.5, fontWeight: 500, fontSize: 14, display: 'inline-block' }}>
+                        {insp.fei_number ? insp.fei_number : 'N/A'}
+                      </Box>
+                    </Box>
+                    {/* Key Findings */}
+                    <Box sx={{ flex: 3, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      {insp.summary ? <Box>
+                        <Chip
+                          label={insp.category}
+                          sx={{
+                            background: '#e3eafd',
+                            color: '#1976d2',
+                            fontWeight: 500,
+                            fontSize: 14,
+                            borderRadius: 4,
+                            width: 'fit-content',
+                          }}
+                          size="small"
+                        />
+                        <Typography sx={{
+                          color: '#38404a',
+                          fontSize: 15,
+                          fontWeight: 500,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          maxWidth: '90%',
+                        }}>
+                          {insp.summary}
+                        </Typography>
+                      </Box>
+                      :  
+                      <Box>
+                        <Typography sx={{ color: '#38404a', fontSize: 15, fontWeight: 500 }}>
+                          -
+                        </Typography>
+                      </Box>
+                    }
+                    </Box>
+                    {/* View/Download */}
+                    <Box sx={{ width: 45, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', border: '1px solid #d8dce1', borderRadius: 3 }}>
+                      <IconButton onClick={() => downloadPdf(insp.url, insp.name)}>
+                        <RemoveRedEyeOutlinedIcon />
+                      </IconButton>
+                    </Box>
+                  </>
+                )}
               </Box>
               )
             })}
           </Card>
         </>)
       :
-        <Card sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', borderRadius: 3, boxShadow: 1, width: '80%', ml: 0, mr: 0 }}>
-          <InsertDriveFileOutlinedIcon sx={{ fontSize: 56, color: '#8a94a6', mb: 2 }} />
-          <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, textAlign: 'center' }}>
+        <Card sx={{ 
+          p: { xs: 2, sm: 3, md: 4 }, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          borderRadius: 3, 
+          boxShadow: 1, 
+          width: { xs: '100%', sm: '95%', md: '80%' }, 
+          ml: 0, 
+          mr: 0 
+        }}>
+          <InsertDriveFileOutlinedIcon sx={{ fontSize: { xs: 40, sm: 48, md: 56 }, color: '#8a94a6', mb: 2 }} />
+          <Typography variant={isMobile ? "h6" : "h6"} sx={{ 
+            fontWeight: 700, 
+            mb: 1, 
+            textAlign: 'center',
+            fontSize: { xs: '16px', sm: '18px', md: '20px' }
+          }}>
           Select a Company or FEI Number to Begin Analysis
           </Typography>
-          <Typography sx={{ color: '#5c6470', textAlign: 'center' }}>
+          <Typography sx={{ 
+            color: '#5c6470', 
+            textAlign: 'center',
+            fontSize: { xs: '14px', sm: '16px' }
+          }}>
           Use the filters above to analyze FDA 483 trends.
           </Typography>
         </Card>
