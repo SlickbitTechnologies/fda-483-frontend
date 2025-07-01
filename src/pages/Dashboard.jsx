@@ -87,6 +87,8 @@ const Dashboard = () => {
                 format="MMM d yyyy"
                 label="Enter Start Date"
                 slotProps={{ textField: { fullWidth: true, placeholder: 'Enter Start Date', size: 'small' } }}
+                minDate={new Date('2024-01-01')}
+                maxDate={new Date()}
               />
             </Box>
             <Box sx={{ flex: 1 }}>
@@ -97,6 +99,8 @@ const Dashboard = () => {
                 format="MMM dd yyyy"
                 label="Enter End Date"
                 slotProps={{ textField: { fullWidth: true, placeholder: 'Enter End Date', size: 'small' } }}
+                minDate={startDate}
+                maxDate={new Date()}
               />
             </Box>
           </Box>
