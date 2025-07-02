@@ -49,26 +49,57 @@ const Dashboard = () => {
             setLoading(false);
         }
     }
+    
+    const {finalResult, numberofCompanies, numberOfFiles, categoriesList, repetitiveIssues} = useMemo(() => {
+      let data = [];
+      const uniqueCompanies = new Set(timeAnalysisResult.map(item => item.companyName)); 
+      if (timeAnalysisResult && timeAnalysisResult.length > 0) {
+        timeAnalysisResult.forEach((item) => {
+          // If item has observations array, create individual objects for each observation
+          if (item.observations && item.observations.length > 0) {
+            item.observations.forEach((observation) => {
+              data.push({
+                companyName: item.companyName,
+                feiNumber: item.feiNumber,
+                url: item.url,
+                date: item.date,
+                summary: observation.summary,
+                category: observation.category,
+                cfrNumber: observation.cfrNumber
+              });
+            });
+          } else {
+            // If no observations, create a single object with the item data
+            data.push({
+              companyName: item.companyName,
+              feiNumber: item.feiNumber,
+              url: item.url,
+              date: item.date,
+              summary: item.summary || '',
+              category: item.category || '',
+              cfrNumber: item.cfrNumber || ''
+            });
+          }
+        });
+      }
 
-    const { numberofCompanies, numberOfFiles, categoriesList, repetitiveIssues } = useMemo(() => {
-      const uniqueCompanies = new Set(timeAnalysisResult.map(item => item.companyName));
-      const fileNames = new Set(timeAnalysisResult.map(item => item.pdfFileName));
-      const repetitiveIssues = timeAnalysisResult.filter(item => item.repeatFinding != null);
+      const repetitiveIssues = data.filter(item => item.repeatFinding != null);
       const categoryCount = {};
-      timeAnalysisResult.forEach(item => {
+      data.forEach(item => {
         if (item.category) {
           categoryCount[item.category] = (categoryCount[item.category] ||  0) + 1;
         }
       });
-      const categoriesList = Object.entries(categoryCount).map(([label, count]) => ({ label, count }));
-      return {
+
+      return { 
+        finalResult: data,
         numberofCompanies: uniqueCompanies.size,
-        numberOfFiles: fileNames.size,
-        categoriesList,
-        repetitiveIssues: []
+        numberOfFiles: timeAnalysisResult.length,
+        categoriesList: Object.entries(categoryCount).map(([label, count]) => ({ label, count })),
+        repetitiveIssues: [],
+        
       };
     }, [timeAnalysisResult]);
-
     return (
       <Box sx={{ 
         minHeight: '100vh', 
@@ -198,10 +229,10 @@ const Dashboard = () => {
               mb: { xs: 2, sm: 0 },
               alignSelf: { xs: 'flex-start', sm: 'auto' }
             }}>
-                {timeAnalysisResult.length} Total Observations
+                {finalResult.length} Total Observations
             </Button>
             <Typography sx={{ color: '#222', mb: 1, fontSize: { xs: '14px', sm: '16px' } }}>
-                Timeline analysis from {localStartDate} to {localEndDate} reveals {timeAnalysisResult.length} observations across {numberOfFiles} FDA 483 inspections involving {numberofCompanies} companies.
+                Timeline analysis from {localStartDate} to {localEndDate} reveals {finalResult.length} observations across {numberOfFiles} FDA 483 inspections involving {numberofCompanies} companies.
             </Typography>
             <Typography sx={{ color: '#222', fontSize: { xs: '14px', sm: '16px' } }}>
                 The data indicates significant compliance challenges requiring industry-wide attention and systematic improvements.
@@ -287,8 +318,8 @@ const Dashboard = () => {
             }}>
             <Typography variant={isMobile ? "h6" : "h6"} sx={{ fontWeight: 700, mb: 3, fontSize: { xs: '16px', sm: '18px', md: '20px' } }}>All Observations ({timeAnalysisResult.length})</Typography>
             <Stack spacing={3}>
-              {timeAnalysisResult.map((item, idx) => {
-                const inspectionDate = new Date(item.inspectionDate).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+              {finalResult.map((item, idx) => {
+                const inspectionDate = new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
                 return (
                 <Box key={idx} sx={{ 
                   border: '1px solid #ececec', 

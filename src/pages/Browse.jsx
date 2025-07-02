@@ -25,7 +25,6 @@ const Browse = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  
   const fetchDocuments = async () => {
     try {
       const response = await axiosInstance.get('/firebaseData');
@@ -38,10 +37,9 @@ const Browse = () => {
     fetchDocuments();
   }, [])
 
-  console.log(documents, 'documentsdocumentsdocuments')
 
   const fetchResult = async () => {
-    setLoading(true);
+    // setLoading(true);
     try {
       if(filteredDocuments.length > 0) {
         const feiNumbers = filteredDocuments.map(doc => doc.fei_number);        
@@ -101,6 +99,20 @@ const Browse = () => {
     setFilteredDocuments(documents.filter(doc => doc.fei_number === value))
   }
 
+  // Sort filteredDocuments based on sort option
+  const sortedDocuments = useMemo(() => {
+    if (!filteredDocuments) return [];
+    let docs = [...filteredDocuments];
+    if (sort === 'Inspection Date') {
+      docs.sort((a, b) => new Date(b.date) - new Date(a.date));
+    } else if (sort === 'Company Name') {
+      docs.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    } else if (sort === 'FEI Number') {
+      docs.sort((a, b) => String(a.fei_number).localeCompare(String(b.fei_number)));
+    }
+    return docs;
+  }, [filteredDocuments, sort]);
+
   useEffect(() => {
     if (debounce) {
       setFilteredDocuments(
@@ -115,17 +127,20 @@ const Browse = () => {
     }
   }, [debounce]);
 
+  // const downloadPdf = (url, fileName = 'document.pdf') => {
+  //   const a = document.createElement('a');
+  //   a.href = url;
+  //   a.setAttribute('download', fileName); // triggers download instead of view
+  //   a.setAttribute('target', '_blank');   // fallback
+  //   document.body.appendChild(a);
+  //   a.click();
+  //   document.body.removeChild(a);
+  // };
 
-  const downloadPdf = (url, fileName = 'document.pdf') => {
-    const a = document.createElement('a');
-    a.href = url;
-    a.setAttribute('download', fileName); // triggers download instead of view
-    a.setAttribute('target', '_blank');   // fallback
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  };
-
+  // const totalobservations = useMemo(() => {
+  //   return filteredDocuments.reduce((acc, doc) => acc + doc.observations.length, 0);
+  // }, [filteredDocuments]);
+  // console.log(totalobservations, 'totalobservationstotalobservations')
   return (
     <Box sx={{ 
       minHeight: '100vh', 
@@ -268,17 +283,18 @@ const Browse = () => {
               pb: 1, 
               color: '#7a7a7a', 
               fontWeight: 600, 
-              fontSize: 16 
+              fontSize: 16, 
+              width: '100%' 
             }}>
-              <Box sx={{ flex: 1.2 }}>Inspection Date</Box>
-              <Box sx={{ flex: 1.5 }}>Company</Box>
-              <Box sx={{ flex: 1 }}>FEI Number</Box>
-              <Box sx={{ flex: 3 }}>Key Findings</Box>
+              <Box sx={{ flex: '0 0 160px', minWidth: 120, maxWidth: 180 }}>Inspection Date</Box>
+              <Box sx={{ flex: '0 0 240px', minWidth: 180, maxWidth: 260 }}>Company</Box>
+              <Box sx={{ flex: '0 0 240px', minWidth: 200, maxWidth: 160 }}>FEI Number</Box>
+              <Box sx={{ flex: '1 1 490px', minWidth: 390, maxWidth: 500 }}>Key Findings</Box>
               <Box sx={{ width: 60, textAlign: 'center' }}>View</Box>
             </Box>
             <Divider sx={{ mb: 2, display: { xs: 'none', md: 'block' } }} />
             {/* Table Rows */}
-            {filteredDocuments.map((insp, idx) => {
+            {sortedDocuments.map((insp, idx) => {
               const inspectionDate = new Date(insp.date).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
               return (
               <Box key={idx} sx={{ 
@@ -287,7 +303,9 @@ const Browse = () => {
                 px: { xs: 0, md: 1 }, 
                 py: { xs: 2, md: 1 }, 
                 borderBottom: idx !== filteredDocuments.length - 1 ? '1px solid #f0f0f0' : 'none',
-                mb: { xs: 2, md: 0 }
+                mb: { xs: 2, md: 0 },
+                width: '100%',
+                '& > .table-col': { verticalAlign: 'middle', display: 'flex', alignItems: 'center', overflow: 'hidden' }
               }}>
                 {/* Mobile Layout */}
                 {isMobile && (
@@ -328,16 +346,17 @@ const Browse = () => {
                       </Box>
                     )}
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
-                      <IconButton 
-                        onClick={() => downloadPdf(insp.url, insp.name)}
-                        sx={{ 
-                          border: '1px solid #d8dce1', 
-                          borderRadius: 3,
-                          padding: 1
-                        }}
-                      >
-                        <RemoveRedEyeOutlinedIcon sx={{ fontSize: { xs: '18px', sm: '20px' } }} />
-                      </IconButton>
+                      <a href={insp.firebaseUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'flex' }}>
+                        <IconButton 
+                          sx={{ 
+                            border: '1px solid #d8dce1', 
+                            borderRadius: 3,
+                            padding: 1
+                          }}
+                        >
+                          <RemoveRedEyeOutlinedIcon sx={{ fontSize: { xs: '18px', sm: '20px' } }} />
+                        </IconButton>
+                      </a>
                     </Box>
                   </Box>
                 )}
@@ -346,61 +365,66 @@ const Browse = () => {
                 {!isMobile && (
                   <>
                     {/* Inspection Date */}
-                    <Box sx={{ flex: 1.2 }}>
-                      <Typography sx={{ fontWeight: 500, fontSize: 14 }}>{inspectionDate}</Typography>
+                    <Box className="table-col" sx={{ flex: '0 0 160px', minWidth: 120, maxWidth: 180 }}>
+                      <Typography sx={{ fontWeight: 500, fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{inspectionDate}</Typography>
                     </Box>
                     {/* Company */}
-                    <Box sx={{ flex: 1.5 }}>
-                      <Typography sx={{ fontWeight: 500, fontSize: 14 }}>{insp.name}</Typography>
+                    <Box className="table-col" sx={{ flex: '0 0 240px', minWidth: 180, maxWidth: 260 }}>
+                      <Typography sx={{ fontWeight: 500, fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{insp.name}</Typography>
                     </Box>
                     {/* FEI Number */}
-                    <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', height: '100%' }}>
-                      <Box sx={{ background: '#f5f7fa', color: '#222', borderRadius: 1, px: 2, py: 0.5, fontWeight: 500, fontSize: 14, display: 'inline-block' }}>
+                    <Box className="table-col" sx={{ flex: '0 0 140px', minWidth: 200, maxWidth: 260 }}>
+                      <Box sx={{ background: '#f5f7fa', color: '#222', borderRadius: 1, px: 2, py: 0.5, fontWeight: 500, fontSize: 14, display: 'inline-block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {insp.fei_number ? insp.fei_number : 'N/A'}
                       </Box>
                     </Box>
                     {/* Key Findings */}
-                    <Box sx={{ flex: 3, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                      {insp.summary ? <Box>
-                        <Chip
-                          label={insp.category}
-                          sx={{
-                            background: '#e3eafd',
-                            color: '#1976d2',
-                            fontWeight: 500,
-                            fontSize: 14,
-                            borderRadius: 4,
-                            width: 'fit-content',
-                          }}
-                          size="small"
-                        />
-                        <Typography sx={{
-                          color: '#38404a',
-                          fontSize: 15,
-                          fontWeight: 500,
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          maxWidth: '90%',
-                        }}>
-                          {insp.summary}
-                        </Typography>
-                      </Box>
-                      :  
-                      <Box>
+                    <Box className="table-col" sx={{ flex: '1 1 490px', minWidth: 390, maxWidth: 500, flexDirection: 'column', gap: 1 }}>
+                      {insp.observations && insp.observations.length > 0 ? 
+                        insp.observations.slice(0,2).map((item, idx2) => (
+                          <Box key={idx2} sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 1 }}>
+                            <Chip
+                              label={item.category}
+                              sx={{
+                                background: '#e3eafd',
+                                color: '#1976d2',
+                                fontWeight: 500,
+                                fontSize: 14,
+                                borderRadius: 4,
+                                width: 'fit-content',
+                                mb: 0.5
+                              }}
+                              size="small"
+                            />
+                            <Typography sx={{
+                              color: '#38404a',
+                              fontSize: 15,
+                              fontWeight: 500,
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              maxWidth: '100%',
+                              wordBreak: 'break-word',
+                            }}>
+                              {item.summary}
+                            </Typography>
+                          </Box>
+                        ))
+                        :  
                         <Typography sx={{ color: '#38404a', fontSize: 15, fontWeight: 500 }}>
                           -
                         </Typography>
-                      </Box>
                     }
                     </Box>
                     {/* View/Download */}
-                    <Box sx={{ width: 45, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', border: '1px solid #d8dce1', borderRadius: 3 }}>
-                      <IconButton onClick={() => downloadPdf(insp.url, insp.name)}>
-                        <RemoveRedEyeOutlinedIcon />
-                      </IconButton>
+                    <Box className="table-col" sx={{ width: 45, minWidth: 45, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', border: '1px solid #d8dce1', borderRadius: 3 }}>
+                      <a href={insp.firebaseUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'flex' }}>
+                        <IconButton>
+                          <RemoveRedEyeOutlinedIcon />
+                        </IconButton>
+                      </a>
                     </Box>
                   </>
                 )}
