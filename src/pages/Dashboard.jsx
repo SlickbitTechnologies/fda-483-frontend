@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Box, Typography, Card, Button, Chip, Stack, CircularProgress, useTheme, useMediaQuery } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
@@ -25,31 +25,37 @@ const Dashboard = () => {
     const localStartDate = new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
     const localEndDate = new Date(endDate).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
     const [timeAnalysisResult, setTimeAnalysisResult] = useState([]);
-    
-    const handleEndDateChange = async(date) => {
-        setEndDate(date);
-        setLoading(true);
-        try {
-            const response = await axiosInstance.get('/timeAnalysis', {
-                params: {
-                    startDate: new Date(startDate).getTime(),
-                    endDate: new Date(date).getTime()
-                }
-            });
-            if(response.data == 'No documents found in Firebase Firestore for the date range') {
-              setTimeAnalysisResult([]);
-              showToast('No documents found from the selected date range', 'error');  
-            } else {
-              setTimeAnalysisResult(response.data);
-            }
-        } catch (error) {
-            setTimeAnalysisResult([]);
-            showToast('Failed to fetch data, Please try again', 'error');
-        } finally {
-            setLoading(false);
+    const [filteredObservations, setFilteredObservations] = useState([]);
+    const [filteredCategory, setFilteredCategory] = useState(null);
+    const observationsRef = useRef(null);
+
+    const handleRunAnalysis = async () => {
+      if (!startDate || !endDate) {
+        showToast('Please select date range to run analysis', 'error');
+        return;
+      }
+      setLoading(true);
+      try {
+        const response = await axiosInstance.get('/timeAnalysis', {
+          params: {
+            startDate: new Date(startDate).getTime(),
+            endDate: new Date(endDate).getTime()
+          }
+        });
+        if(response.data == 'No documents found in Firebase Firestore for the date range') {
+          setTimeAnalysisResult([]);
+          showToast('No documents found from the selected date range', 'error');  
+        } else {
+          setTimeAnalysisResult(response.data);
         }
+      } catch (error) {
+        setTimeAnalysisResult([]);
+        showToast('Failed to fetch data, Please try again', 'error');
+      } finally {
+        setLoading(false);
+      }
     }
-    
+
     const {finalResult, numberofCompanies, numberOfFiles, categoriesList, repetitiveIssues} = useMemo(() => {
       let data = [];
       const uniqueCompanies = new Set(timeAnalysisResult.map(item => item.companyName)); 
@@ -100,6 +106,37 @@ const Dashboard = () => {
         
       };
     }, [timeAnalysisResult]);
+
+    const handleCategoryClick = (category) => {
+      const filteredObservations = finalResult.filter(item => item.category === category);
+      setFilteredObservations(filteredObservations);
+      setFilteredCategory(category);
+      setTimeout(() => {
+        if (observationsRef.current) {
+          observationsRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    }
+
+
+    useEffect(() => {
+      if(filteredObservations.length > 0) {
+        setFilteredObservations(filteredObservations)
+      }else {
+        setFilteredObservations(finalResult)
+      }
+    }, [timeAnalysisResult])
+
+    const handleAllObservations = () => {
+      setFilteredObservations(finalResult);
+      setFilteredCategory(null);
+      setTimeout(() => {
+        if (observationsRef.current) {
+          observationsRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    }
+
     return (
       <Box sx={{ 
         minHeight: '100vh', 
@@ -136,7 +173,8 @@ const Dashboard = () => {
             gap: { xs: 2, sm: 3, md: 4 }, 
             mb: 2, 
             width: '100%',
-            flexDirection: { xs: 'column', sm: 'row' }
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'stretch', sm: 'flex-end' }
           }}>
             <Box sx={{ flex: 1 }}>
               <Typography sx={{ fontWeight: 600, mb: 1, fontSize: { xs: '14px', sm: '16px' } }}>Start Date</Typography>
@@ -161,7 +199,7 @@ const Dashboard = () => {
               <Typography sx={{ fontWeight: 600, mb: 1, fontSize: { xs: '14px', sm: '16px' } }}>End Date</Typography>
               <DatePicker
                 value={endDate}
-                onChange={(date) => handleEndDateChange(date)}
+                onChange={(date) => setEndDate(date)}
                 format="MMM dd yyyy"
                 label="Enter End Date"
                 slotProps={{ 
@@ -175,6 +213,32 @@ const Dashboard = () => {
                 minDate={startDate}
                 maxDate={new Date()}
               />
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'flex-end', height: '100%' }}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleRunAnalysis}
+                sx={{
+                  minWidth: 120,
+                  height: 40,
+                  fontWeight: 600,
+                  fontSize: { xs: '14px', sm: '16px' },
+                  ml: { xs: 0, sm: 2 },
+                  mt: { xs: 2, sm: 0 },
+                  textTransform: 'none',
+                  boxShadow: 'none',
+                  background: '#1976d2',
+                  transition: 'transform 0.2s cubic-bezier(.4,2,.6,1), box-shadow 0.2s cubic-bezier(.4,2,.6,1), background 0.2s',
+                  '&:hover': {
+                    background: '#115293',
+                    transform: 'scale(1.06) translateY(-2px)',
+                    boxShadow: '0 6px 18px 0 rgba(25, 118, 210, 0.18)',
+                  },
+                }}
+              >
+                Run Analysis
+              </Button>
             </Box>
           </Box>
         </Card>
@@ -213,22 +277,24 @@ const Dashboard = () => {
               position: 'relative' 
             }}>
             <Typography variant={isMobile ? "h6" : "h6"} sx={{ fontWeight: 700, mb: 2, fontSize: { xs: '16px', sm: '18px', md: '20px' } }}>Executive Summary</Typography>
-            <Button variant="contained" sx={{ 
-              position: { xs: 'static', sm: 'absolute' }, 
-              top: { sm: 24, md: 24 }, 
-              right: { sm: 24, md: 24 }, 
-              background: '#f5faff', 
-              color: '#1976d2', 
-              fontWeight: 600, 
-              boxShadow: 'none', 
-              '&:hover': { background: '#e3f2fd' }, 
-              textTransform: 'none', 
-              borderRadius: 8, 
-              fontSize: { xs: '13px', sm: '14px', md: '15px' }, 
-              px: 2,
-              mb: { xs: 2, sm: 0 },
-              alignSelf: { xs: 'flex-start', sm: 'auto' }
-            }}>
+            <Button variant="contained" 
+              onClick={handleAllObservations}
+              sx={{ 
+                position: { xs: 'static', sm: 'absolute' }, 
+                top: { sm: 24, md: 24 }, 
+                right: { sm: 24, md: 24 }, 
+                background: '#f5faff', 
+                color: '#1976d2', 
+                fontWeight: 600, 
+                boxShadow: 'none', 
+                '&:hover': { background: '#e3f2fd' }, 
+                textTransform: 'none', 
+                borderRadius: 8, 
+                fontSize: { xs: '13px', sm: '14px', md: '15px' }, 
+                px: 2,
+                mb: { xs: 2, sm: 0 },
+                alignSelf: { xs: 'flex-start', sm: 'auto' }
+              }}>
                 {finalResult.length} Total Observations
             </Button>
             <Typography sx={{ color: '#222', mb: 1, fontSize: { xs: '14px', sm: '16px' } }}>
@@ -258,7 +324,25 @@ const Dashboard = () => {
               mr: { xs: 0, lg: 0 },
               mb: { xs: 2, lg: 0 }
             }}>
-                <Typography variant={isMobile ? "h6" : "h6"} sx={{ fontWeight: 700, mb: 2, fontSize: { xs: '16px', sm: '18px', md: '20px' } }}>Primary Issue Categories</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexDirection: 'row' }}>
+                  <Typography variant={isMobile ? "h6" : "h6"} sx={{ fontWeight: 700, mb: 2, fontSize: { xs: '16px', sm: '18px', md: '20px' } }}>Primary Issue Categories</Typography>
+                  {filteredCategory && (
+                    <Button variant="contained" 
+                      onClick={handleAllObservations}
+                      sx={{ 
+                        height: '30px',
+                        width: 'auto',
+                        background: '#f5faff',
+                        color: '#1976d2',
+                        fontWeight: 600,
+                        textTransform: 'none',
+                        boxShadow: 'none',
+                        '&:hover': { background: '#e3f2fd' },
+                      }}>
+                      Clear filter
+                    </Button>
+                  )}
+                </Box>
                 <Stack spacing={2}>
                 {categoriesList.map((cat, idx) => (
                     <Box key={cat.label} sx={{ 
@@ -271,7 +355,7 @@ const Dashboard = () => {
                       flexDirection: { xs: 'column', sm: 'row' },
                       gap: { xs: 1, sm: 0 }
                     }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                    <Box onClick={() => handleCategoryClick(cat.label)} sx={{ display: 'flex', alignItems: 'center', width: '100%', cursor: 'pointer' }}>
                       <Chip label={idx + 1} sx={{ mr: 2, background: '#e3eafd', color: '#1976d2', fontWeight: 700, fontSize: { xs: '12px', sm: '14px' } }} />
                       <Typography sx={{ flex: 1, fontWeight: 500, fontSize: { xs: '13px', sm: '14px', md: '16px' } }}>{cat.label}</Typography>
                       <Chip label={cat.count} sx={{ background: '#f1f3f6', color: '#222', fontWeight: 700, fontSize: { xs: '12px', sm: '14px' } }} />
@@ -314,11 +398,12 @@ const Dashboard = () => {
               mb: { xs: 2, sm: 3, md: 4 }, 
               borderRadius: 3, 
               boxShadow: 1, 
-              width: { xs: '100%', sm: '95%', md: '80%' } 
-            }}>
-            <Typography variant={isMobile ? "h6" : "h6"} sx={{ fontWeight: 700, mb: 3, fontSize: { xs: '16px', sm: '18px', md: '20px' } }}>All Observations ({timeAnalysisResult.length})</Typography>
+              width: { xs: '100%', sm: '95%', md: '80%' }, 
+              scrollMarginTop: '100px'
+            }} ref={observationsRef}>
+            <Typography variant={isMobile ? "h6" : "h6"} sx={{ fontWeight: 700, mb: 3, fontSize: { xs: '16px', sm: '18px', md: '20px' } }}>All Observations ({filteredObservations.length})</Typography>
             <Stack spacing={3}>
-              {finalResult.map((item, idx) => {
+              {filteredObservations.map((item, idx) => {
                 const inspectionDate = new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
                 return (
                 <Box key={idx} sx={{ 
