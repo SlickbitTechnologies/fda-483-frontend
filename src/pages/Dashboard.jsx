@@ -394,7 +394,7 @@ const Dashboard = () => {
                 </Box>
                 {repetitiveIssues.length > 0 ?
                     <Stack spacing={2} sx={{ maxHeight: '300px', minHeight: '300px', overflowY: 'auto', pr: 1 }}>
-                    {repetitiveIssues.map((issue, idx) => (
+                    {repetitiveIssues.slice(0, 6).map((issue, idx) => (
                         <Box key={idx} sx={{ background: '#fff3cd', border: '1px solid #ffe6a1', borderRadius: 2, px: { xs: 1.5, sm: 2 }, py: 1 }}>
                         <Typography sx={{ color: '#7a3a00', fontWeight: 500, fontSize: { xs: '13px', sm: '14px', md: '16px' } }}>{issue.label}</Typography>
                         </Box>
