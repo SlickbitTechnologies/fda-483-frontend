@@ -37,7 +37,6 @@ const Browse = () => {
     fetchDocuments();
   }, [])
 
-
   const fetchResult = async () => {
     // setLoading(true);
     try {

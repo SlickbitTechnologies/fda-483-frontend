@@ -89,7 +89,21 @@ const Dashboard = () => {
         });
       }
 
-      const repetitiveIssues = data.filter(item => item.repeatFinding != null);
+      const repetitiveIssuesresult = [];
+
+      timeAnalysisResult.map((i) => {
+        if(i.repeatFinding) {
+          i.repeatFinding.forEach((item) => {
+            if(item.length > 30) {
+            let obj = {
+              label: item
+              }
+              repetitiveIssuesresult.push(obj);
+            }
+          })
+        }
+      })
+
       const categoryCount = {};
       data.forEach(item => {
         if (item.category) {
@@ -102,7 +116,7 @@ const Dashboard = () => {
         numberofCompanies: uniqueCompanies.size,
         numberOfFiles: timeAnalysisResult.length,
         categoriesList: Object.entries(categoryCount).map(([label, count]) => ({ label, count })),
-        repetitiveIssues: [],
+        repetitiveIssues: repetitiveIssuesresult,
         
       };
     }, [timeAnalysisResult]);
@@ -181,7 +195,7 @@ const Dashboard = () => {
               <DatePicker
                 value={startDate}
                 onChange={(date) => setStartDate(date)}
-                format="MMM d yyyy"
+                format="MMM dd yyyy"
                 label="Enter Start Date"
                 slotProps={{ 
                   textField: { 
@@ -343,7 +357,7 @@ const Dashboard = () => {
                     </Button>
                   )}
                 </Box>
-                <Stack spacing={2}>
+                <Stack spacing={2} sx={{ maxHeight: '300px', minHeight: '300px', overflowY: 'auto', pr: 1 }}>
                 {categoriesList.map((cat, idx) => (
                     <Box key={cat.label} sx={{ 
                       display: 'flex', 
@@ -379,10 +393,10 @@ const Dashboard = () => {
                 <Typography variant={isMobile ? "h6" : "h6"} sx={{ fontWeight: 700, color: '#7a3a00', fontSize: { xs: '16px', sm: '18px', md: '20px' } }}>Systemic Issues Identified</Typography>
                 </Box>
                 {repetitiveIssues.length > 0 ?
-                    <Stack spacing={2}>
-                    {systemicIssues.map((issue, idx) => (
+                    <Stack spacing={2} sx={{ maxHeight: '300px', minHeight: '300px', overflowY: 'auto', pr: 1 }}>
+                    {repetitiveIssues.map((issue, idx) => (
                         <Box key={idx} sx={{ background: '#fff3cd', border: '1px solid #ffe6a1', borderRadius: 2, px: { xs: 1.5, sm: 2 }, py: 1 }}>
-                        <Typography sx={{ color: '#7a3a00', fontWeight: 500, fontSize: { xs: '13px', sm: '14px', md: '16px' } }}>{issue}</Typography>
+                        <Typography sx={{ color: '#7a3a00', fontWeight: 500, fontSize: { xs: '13px', sm: '14px', md: '16px' } }}>{issue.label}</Typography>
                         </Box>
                     ))}
                     </Stack>
@@ -402,7 +416,25 @@ const Dashboard = () => {
               scrollMarginTop: '100px'
             }} ref={observationsRef}>
             <Typography variant={isMobile ? "h6" : "h6"} sx={{ fontWeight: 700, mb: 3, fontSize: { xs: '16px', sm: '18px', md: '20px' } }}>All Observations ({filteredObservations.length})</Typography>
-            <Stack spacing={3}>
+            <Stack
+                spacing={3}
+                sx={{
+                  maxHeight: '500px',
+                  minHeight: '500px',
+                  overflowY: 'auto',
+                  pr: 1,
+                  '&::-webkit-scrollbar': {
+                    width: '6px',
+                  },
+                  '&::-webkit-scrollbar-thumb': {
+                    background: '#e0e0e0',
+                    borderRadius: '4px',
+                  },
+                  '&::-webkit-scrollbar-track': {
+                    background: 'transparent',
+                  },
+                }}
+              >
               {filteredObservations.map((item, idx) => {
                 const inspectionDate = new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
                 return (
