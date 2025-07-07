@@ -59,35 +59,6 @@ const Dashboard = () => {
     const {finalResult, numberofCompanies, numberOfFiles, categoriesList, repetitiveIssues} = useMemo(() => {
       let data = [];
       const uniqueCompanies = new Set(timeAnalysisResult.map(item => item.companyName)); 
-      if (timeAnalysisResult && timeAnalysisResult.length > 0) {
-        timeAnalysisResult.forEach((item) => {
-          // If item has observations array, create individual objects for each observation
-          if (item.observations && item.observations.length > 0) {
-            item.observations.forEach((observation) => {
-              data.push({
-                companyName: item.companyName,
-                feiNumber: item.feiNumber,
-                url: item.url,
-                date: item.date,
-                summary: observation.summary,
-                category: observation.category,
-                cfrNumber: observation.cfrNumber
-              });
-            });
-          } else {
-            // If no observations, create a single object with the item data
-            data.push({
-              companyName: item.companyName,
-              feiNumber: item.feiNumber,
-              url: item.url,
-              date: item.date,
-              summary: item.summary || '',
-              category: item.category || '',
-              cfrNumber: item.cfrNumber || ''
-            });
-          }
-        });
-      }
 
       const repetitiveIssuesresult = [];
 
@@ -103,6 +74,52 @@ const Dashboard = () => {
           })
         }
       })
+
+
+
+      if (timeAnalysisResult && timeAnalysisResult.length > 0) {
+        timeAnalysisResult.forEach((item) => {
+          // If item has observations array, create individual objects for each observation
+          if (item.observations && item.observations.length > 0) {
+            item.observations.forEach((observation) => {
+              let isRepeated = false;
+              if (item.repeatFinding && observation.category) {
+                const categoryWords = observation.category.toLowerCase().split(' ');
+                isRepeated = item.repeatFinding.some(repeatItem => {
+                  const repeatText = repeatItem.toLowerCase();
+                  return categoryWords.some(word => 
+                    repeatText.includes(word) && word.length > 3
+                  );
+                });
+              }
+              data.push({
+                companyName: item.companyName,
+                feiNumber: item.feiNumber,
+                url: item.url,
+                date: item.date,
+                summary: observation.summary,
+                category: observation.category,
+                cfrNumber: observation.cfrNumber,
+                issueIdentified: isRepeated
+              });
+            });
+          } else {
+            // If no observations, create a single object with the item data
+            data.push({
+              companyName: item.companyName,
+              feiNumber: item.feiNumber,
+              url: item.url,
+              date: item.date,
+              summary: item.summary || '',
+              category: item.category || '',
+              cfrNumber: item.cfrNumber || '',
+              issueIdentified: false
+            });
+          }
+        });
+      }
+
+      
 
       const categoryCount = {};
       data.forEach(item => {
@@ -120,7 +137,6 @@ const Dashboard = () => {
         
       };
     }, [timeAnalysisResult]);
-
     const handleCategoryClick = (category) => {
       const filteredObservations = finalResult.filter(item => item.category === category);
       setFilteredObservations(filteredObservations);
@@ -130,6 +146,60 @@ const Dashboard = () => {
           observationsRef.current.scrollIntoView({ behavior: 'smooth' });
         }
       }, 100);
+    }
+    const handleSytemicIssueClick = (issue) => {
+      console.log('Systemic issue clicked:', issue);
+      
+      // Find observations that have issueIdentified = true and match the systemic issue
+      const matchingObservations = finalResult.filter(item => {
+        if (!item.issueIdentified) return false;
+        
+        // Check if the systemic issue text contains any words from the observation's category
+        if (item.category) {
+          const categoryWords = item.category.toLowerCase().split(' ');
+          const issueText = issue.toLowerCase();
+          
+          return categoryWords.some(word => 
+            issueText.includes(word) && word.length > 3
+          );
+        }
+        return false;
+      });
+      
+      console.log('Matching observations with issueIdentified:', matchingObservations);
+      
+      if (matchingObservations.length > 0) {
+        // Get the most common category from matching observations
+        const categoryCount = {};
+        matchingObservations.forEach(item => {
+          if (item.category) {
+            categoryCount[item.category] = (categoryCount[item.category] || 0) + 1;
+          }
+        });
+        
+        const mostCommonCategory = Object.entries(categoryCount)
+          .sort(([,a], [,b]) => b - a)[0]?.[0];
+        
+        console.log('Most common category from matching observations:', mostCommonCategory);
+        
+        if (mostCommonCategory) {
+          // Filter observations by the most common category
+          const filteredObservations = finalResult.filter(item => item.category === mostCommonCategory);
+          setFilteredObservations(filteredObservations);
+          setFilteredCategory(mostCommonCategory);
+          
+          console.log('Filtered observations by category:', filteredObservations);
+          
+          // Scroll to observations section
+          setTimeout(() => {
+            if (observationsRef.current) {
+              observationsRef.current.scrollIntoView({ behavior: 'smooth' });
+            }
+          }, 100);
+        }
+      } else {
+        console.log('No matching observations found for this systemic issue');
+      }
     }
 
 
@@ -197,6 +267,10 @@ const Dashboard = () => {
                 onChange={(date) => setStartDate(date)}
                 format="MMM dd yyyy"
                 label="Enter Start Date"
+                views={['year', 'month', 'day']}
+                localeText={{
+                  fieldMonthPlaceholder: () => 'MMM',
+                }}
                 slotProps={{ 
                   textField: { 
                     fullWidth: true, 
@@ -216,6 +290,10 @@ const Dashboard = () => {
                 onChange={(date) => setEndDate(date)}
                 format="MMM dd yyyy"
                 label="Enter End Date"
+                localeText={{
+                  fieldMonthPlaceholder: () => 'MMM',
+                }}
+                views={['year', 'month', 'day']}
                 slotProps={{ 
                   textField: { 
                     fullWidth: true, 
@@ -395,7 +473,7 @@ const Dashboard = () => {
                 {repetitiveIssues.length > 0 ?
                     <Stack spacing={2} sx={{ maxHeight: '300px', minHeight: '300px', overflowY: 'auto', pr: 1 }}>
                     {repetitiveIssues.slice(0, 6).map((issue, idx) => (
-                        <Box key={idx} sx={{ background: '#fff3cd', border: '1px solid #ffe6a1', borderRadius: 2, px: { xs: 1.5, sm: 2 }, py: 1 }}>
+                        <Box onClick={() => handleSytemicIssueClick(issue.label)} key={idx} sx={{ cursor: 'pointer', background: '#fff3cd', border: '1px solid #ffe6a1', borderRadius: 2, px: { xs: 1.5, sm: 2 }, py: 1 }}>
                         <Typography sx={{ color: '#7a3a00', fontWeight: 500, fontSize: { xs: '13px', sm: '14px', md: '16px' } }}>{issue.label}</Typography>
                         </Box>
                     ))}
@@ -468,6 +546,22 @@ const Dashboard = () => {
                               mt: { xs: 1, sm: 0 },
                               background: '#e3eafd',
                               color: '#1976d2',
+                              fontWeight: 500,
+                              fontSize: { xs: '12px', sm: '14px' },
+                              px: 1.5,
+                              borderRadius: 2,
+                          }}
+                          size="small"
+                      />}
+                      {item.issueIdentified && <Chip
+                          key={item.issueIdentified}
+                          label={item.issueIdentified ? 'Repeat Finding' : ''}
+                          sx={{
+                              ml: { xs: 0, sm: 1 },
+                              mt: { xs: 1, sm: 0 },
+                              background: '#ffe6a1',
+                              color: '#7a3a00',
+                              border: '1px solid #ffe6a1',
                               fontWeight: 500,
                               fontSize: { xs: '12px', sm: '14px' },
                               px: 1.5,
