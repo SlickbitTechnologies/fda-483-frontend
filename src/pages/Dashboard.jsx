@@ -61,21 +61,43 @@ const Dashboard = () => {
       const uniqueCompanies = new Set(timeAnalysisResult.map(item => item.companyName)); 
 
       const repetitiveIssuesresult = [];
+      const repetitiveIssuesCount = {};
 
       timeAnalysisResult.map((i) => {
         if(i.repeatFinding) {
           i.repeatFinding.forEach((item) => {
             if(item.length > 30) {
-            let obj = {
-              label: item
+              // Find similar issues by checking if they contain common keywords
+              let foundSimilar = false;
+              const itemWords = item.toLowerCase().split(' ').filter(word => word.length > 3);
+              
+              for (const existingIssue of Object.keys(repetitiveIssuesCount)) {
+                const existingWords = existingIssue.toLowerCase().split(' ').filter(word => word.length > 3);
+                
+                // Check if they share common keywords (at least 2 words in common)
+                const commonWords = itemWords.filter(word => existingWords.includes(word));
+                if (commonWords.length >= 2) {
+                  repetitiveIssuesCount[existingIssue] += 1;
+                  foundSimilar = true;
+                  break;
+                }
               }
-              repetitiveIssuesresult.push(obj);
+              
+              if (!foundSimilar) {
+                repetitiveIssuesCount[item] = 1;
+              }
             }
           })
         }
       })
 
-
+      // Convert to array with count
+      Object.entries(repetitiveIssuesCount).forEach(([label, count]) => {
+        repetitiveIssuesresult.push({
+          label: label,
+          count: count
+        });
+      });
 
       if (timeAnalysisResult && timeAnalysisResult.length > 0) {
         timeAnalysisResult.forEach((item) => {
@@ -474,7 +496,21 @@ const Dashboard = () => {
                     <Stack spacing={2} sx={{ maxHeight: '300px', minHeight: '300px', overflowY: 'auto', pr: 1 }}>
                     {repetitiveIssues.slice(0, 6).map((issue, idx) => (
                         <Box onClick={() => handleSytemicIssueClick(issue.label)} key={idx} sx={{ cursor: 'pointer', background: '#fff3cd', border: '1px solid #ffe6a1', borderRadius: 2, px: { xs: 1.5, sm: 2 }, py: 1 }}>
-                        <Typography sx={{ color: '#7a3a00', fontWeight: 500, fontSize: { xs: '13px', sm: '14px', md: '16px' } }}>{issue.label}</Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <Typography sx={{ color: '#7a3a00', fontWeight: 500, fontSize: { xs: '13px', sm: '14px', md: '16px' }, flex: 1 }}>{issue.label}</Typography>
+                          <Chip 
+                            label={issue.count || 1} 
+                            sx={{ 
+                              background: '#ffe6a1', 
+                              color: '#7a3a00', 
+                              fontWeight: 700, 
+                              fontSize: { xs: '11px', sm: '12px' },
+                              ml: 1,
+                              minWidth: '20px'
+                            }} 
+                            size="small"
+                          />
+                        </Box>
                         </Box>
                     ))}
                     </Stack>
