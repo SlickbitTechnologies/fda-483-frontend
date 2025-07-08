@@ -243,6 +243,21 @@ const Dashboard = () => {
       }, 100);
     }
 
+    const handleAllSystemicIssues = () => {
+      // Filter only observations that have issueIdentified = true (Repeat Finding badge)
+      const systemicObservations = finalResult.filter(item => item.issueIdentified === true);
+      setFilteredObservations(systemicObservations);
+      setFilteredCategory(null);
+      setTimeout(() => {
+        if (observationsRef.current) {
+          observationsRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    }
+
+    const totalSystemicIssues = finalResult.filter(item => item.issueIdentified === true).length;
+    console.log(totalSystemicIssues, 'finaltotalSystemicIssuesResultjkdhsdjkh')
+    
     return (
       <Box sx={{ 
         minHeight: '100vh', 
@@ -391,26 +406,48 @@ const Dashboard = () => {
               position: 'relative' 
             }}>
             <Typography variant={isMobile ? "h6" : "h6"} sx={{ fontWeight: 700, mb: 2, fontSize: { xs: '16px', sm: '18px', md: '20px' } }}>Executive Summary</Typography>
-            <Button variant="contained" 
-              onClick={handleAllObservations}
-              sx={{ 
-                position: { xs: 'static', sm: 'absolute' }, 
-                top: { sm: 24, md: 24 }, 
-                right: { sm: 24, md: 24 }, 
-                background: '#f5faff', 
-                color: '#1976d2', 
-                fontWeight: 600, 
-                boxShadow: 'none', 
-                '&:hover': { background: '#e3f2fd' }, 
-                textTransform: 'none', 
-                borderRadius: 8, 
-                fontSize: { xs: '13px', sm: '14px', md: '15px' }, 
-                px: 2,
-                mb: { xs: 2, sm: 0 },
-                alignSelf: { xs: 'flex-start', sm: 'auto' }
-              }}>
-                {finalResult.length} Total Observations
-            </Button>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end',flexDirection: 'row' }}> 
+              <Button variant="contained" 
+                onClick={handleAllObservations}
+                sx={{ 
+                  // position: { xs: 'static', sm: 'absolute' }, 
+                  // top: { sm: 24, md: 24 }, 
+                  right: { sm: 10, md: 10 }, 
+                  background: '#f5faff', 
+                  color: '#1976d2', 
+                  fontWeight: 600, 
+                  boxShadow: 'none', 
+                  '&:hover': { background: '#e3f2fd' }, 
+                  textTransform: 'none', 
+                  borderRadius: 8, 
+                  fontSize: { xs: '13px', sm: '14px', md: '15px' }, 
+                  px: 2,
+                  mb: { xs: 2, sm: 0 },
+                  alignSelf: { xs: 'flex-start', sm: 'auto' }
+                }}>
+                  {finalResult.length} Total Observations
+              </Button>
+              <Button variant="contained" 
+                onClick={handleAllSystemicIssues}
+                sx={{ 
+                  // position: { xs: 'static', sm: 'absolute' }, 
+                  // top: { sm: 24, md: 24 }, 
+                  // right: { sm: 24, md: 24 }, 
+                  background: '#fff3cd', 
+                  color: '#7a3a00', 
+                  fontWeight: 600, 
+                  boxShadow: 'none', 
+                  '&:hover': { background: '#ffe6a1' }, 
+                  textTransform: 'none', 
+                  borderRadius: 8, 
+                  fontSize: { xs: '13px', sm: '14px', md: '15px' }, 
+                  px: 2,
+                  mb: { xs: 2, sm: 0 },
+                  alignSelf: { xs: 'flex-start', sm: 'auto' }
+                }}>
+                  {totalSystemicIssues} Total Systemic Issues
+              </Button>
+            </Box>
             <Typography sx={{ color: '#222', mb: 1, fontSize: { xs: '14px', sm: '16px' } }}>
                 Timeline analysis from {localStartDate} to {localEndDate} reveals {finalResult.length} observations across {numberOfFiles} FDA 483 inspections involving {numberofCompanies} companies.
             </Typography>
@@ -495,10 +532,10 @@ const Dashboard = () => {
                 {repetitiveIssues.length > 0 ?
                     <Stack spacing={2} sx={{ maxHeight: '300px', minHeight: '300px', overflowY: 'auto', pr: 1 }}>
                     {repetitiveIssues.slice(0, 6).map((issue, idx) => (
-                        <Box onClick={() => handleSytemicIssueClick(issue.label)} key={idx} sx={{ cursor: 'pointer', background: '#fff3cd', border: '1px solid #ffe6a1', borderRadius: 2, px: { xs: 1.5, sm: 2 }, py: 1 }}>
+                        <Box key={idx} sx={{ background: '#fff3cd', border: '1px solid #ffe6a1', borderRadius: 2, px: { xs: 1.5, sm: 2 }, py: 1 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                           <Typography sx={{ color: '#7a3a00', fontWeight: 500, fontSize: { xs: '13px', sm: '14px', md: '16px' }, flex: 1 }}>{issue.label}</Typography>
-                          <Chip 
+                          {/* <Chip 
                             label={issue.count || 1} 
                             sx={{ 
                               background: '#ffe6a1', 
@@ -509,7 +546,7 @@ const Dashboard = () => {
                               minWidth: '20px'
                             }} 
                             size="small"
-                          />
+                          /> */}
                         </Box>
                         </Box>
                     ))}
